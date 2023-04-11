@@ -155,7 +155,7 @@ class forgotpassword(GenericAPIView):
 
        
         return HttpResponse(json.dumps(response, indent=4))
-def post(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         print(request)
         otp = otpView.get(self, request)
         print(otp.content.decode())
