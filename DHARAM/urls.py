@@ -22,13 +22,16 @@ from django.contrib import admin
 # ]
 from django.urls import include, path
 from rest_framework import routers
-from dharam_api.views import SignupView,otpView,LoginView, resetpasswordView,forgotpassword,otpverify
+from dharam_api.views import SignupView,otpView,LoginView, resetpasswordView,forgotpassword,otpverify,feedback,Invoice
 from dharam_api import views
 
 router = routers.DefaultRouter() 
 # router.register(r'users', views.UserViewSet)
 # router.register(r'groups', views.GroupViewSet)
 router.register(r'user_details', views.User_detailsViewSet)
+router.register(r'feedback', views.feedbackViewSet)
+router.register(r'invoices', views.InvoiceViewSet)
+
 # router.register(r'login_user', views.CustomerLoginViewSet)
 
 # Wire up our API using automatic URL routing.
@@ -43,6 +46,10 @@ urlpatterns = [
     path('reset/', resetpasswordView.as_view(), name="reset"),
     path('forgotpassword/', forgotpassword.as_view(), name="forgotpassword"),
     path('otpverify/', otpverify.as_view(), name="otpverify"),
+    path('updatefeedback/', feedback.as_view(), name="feedback"),
+    path('invoices_data/', Invoice.as_view(), name="Invoice"),
+    
+
 
 
 

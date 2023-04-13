@@ -1,9 +1,13 @@
 from django.contrib.auth.models import User, Group
 from rest_framework import viewsets
 from rest_framework import permissions
-from dharam_api.serializer import  GroupSerializer,User_detailsSerializer 
-from dharam_api.models import User_details
+from dharam_api.serializer import  GroupSerializer,User_detailsSerializer,feedbackSerializer,InvoiceSerializer
+from dharam_api.models import User_details 
+from dharam_api.models import Invoice
+from decimal import Decimal
 
+from dharam_api.models import feedback as user_feedback
+import datetime
 from rest_framework import generics, permissions
 from rest_framework.response import Response
 # from dharam_api.models import AuthToken
@@ -38,7 +42,13 @@ class User_detailsViewSet(viewsets.ModelViewSet):
     """
     queryset = User_details.objects.all()
     serializer_class = User_detailsSerializer
-    permission_classes = [permissions.IsAuthenticated]    
+    permission_classes = [permissions.IsAuthenticated]
+
+
+class InvoiceViewSet(viewsets.ModelViewSet): 
+    queryset = Invoice.objects.all()
+    serializer_class = InvoiceSerializer
+    permission_classes = [permissions.IsAuthenticated] 
 
     
 
@@ -205,4 +215,58 @@ class otpverify(GenericAPIView):
             else:
                 return HttpResponse("otp number not verify")
 
-       
+
+class feedbackViewSet(viewsets.ModelViewSet): 
+    queryset = user_feedback.objects.all()
+    serializer_class = feedbackSerializer
+    permission_classes = [permissions.IsAuthenticated] 
+
+
+
+class feedback(GenericAPIView):
+   def post(self, request, *args, **kwargs):
+        userfeedback = json.loads(self.request.body.decode())['userfeedback']
+        email = json.loads(self.request.body.decode())['email']
+        print(userfeedback)
+        check_email = User_details.objects.get(email=email)
+        if userfeedback and check_email:
+            if json.loads(self.request.body.decode())['userfeedback'] :
+                 user_id= check_email.id
+                 save = user_feedback(user_id__id=user_id,userfeedback=userfeedback,date=datetime.datetime.now())
+                 save.save()
+                 if save:
+                    response = {
+                        'massege': "userfeedback update successfully",
+                        }
+                    print(json.dumps(response, indent=4))
+                    return HttpResponse((json.dumps(response, indent=4)))
+            else:
+                    return HttpResponse("feedback not found")
+        else:
+                return HttpResponse("user Not found")
+
+
+
+class Invoice(GenericAPIView):
+   def post(self, request, *args, **kwargs):
+        data = json.loads(self.request.body.decode())
+        number = data.get('mobile_number')
+        check_email = data.get('check_email')
+        print(number)
+        check_email = User_details.objects.filter(email=customer_email).first()
+        if number and check_email:
+            customer_name = check_email.name
+            customer_email = check_email.email
+            number = Invoice.objects.count() + 1
+            date = datetime.timezone.now().date()
+            total_amount = Decimal(data.get('total_amount', 0))
+            invoice = Invoice(number=number, date=date, customer_name=customer_name, customer_email=customer_email, total_amount=total_amount)
+            invoice.save()
+            if invoice:
+                response = {'message': "Invoice updated successfully"}
+                print(json.dumps(response, indent=4))
+                return HttpResponse(json.dumps(response, indent=4), content_type="application/json")
+            
+        return HttpResponse("Invalid request parameters or user not found", status=400)
+
+
