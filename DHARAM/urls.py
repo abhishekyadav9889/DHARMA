@@ -22,7 +22,7 @@ from django.contrib import admin
 # ]
 from django.urls import include, path
 from rest_framework import routers
-from dharam_api.views import SignupView,otpView,LoginView, resetpasswordView,forgotpassword,otpverify,feedback,Invoice
+from dharam_api.views import SignupView,otpView,LoginView, resetpasswordView,forgotpassword,otpverify,feedback,Invoice,History
 from dharam_api import views
 
 router = routers.DefaultRouter() 
@@ -31,9 +31,11 @@ router = routers.DefaultRouter()
 router.register(r'user_details', views.User_detailsViewSet)
 router.register(r'feedback', views.feedbackViewSet)
 router.register(r'invoices', views.InvoiceViewSet)
+router.register(r'history', views.HistoryViewSet)
+
 
 # router.register(r'login_user', views.CustomerLoginViewSet)
-
+Invoice
 # Wire up our API using automatic URL routing.
 # Additionally, we include login URLs for the browsable API.
 urlpatterns = [
@@ -48,6 +50,8 @@ urlpatterns = [
     path('otpverify/', otpverify.as_view(), name="otpverify"),
     path('updatefeedback/', feedback.as_view(), name="feedback"),
     path('invoices_data/', Invoice.as_view(), name="Invoice"),
+    path('history_data/', History.as_view(), name="History"),
+
     
 
 

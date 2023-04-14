@@ -1,6 +1,6 @@
 from django.contrib.auth.models import User, Group
 from rest_framework import serializers
-from dharam_api.models import User_details,feedback,Invoice
+from dharam_api.models import User_details,feedback,Invoice,History
 
 
 
@@ -37,3 +37,10 @@ class InvoiceSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Invoice
         fields = ['mobile_number','date','customer_name','customer_email','total_amount']      
+
+
+
+class HistorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = History
+        fields = ('id', 'date', 'location', 'status', 'time', 'accepted')

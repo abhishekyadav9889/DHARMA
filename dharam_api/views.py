@@ -1,10 +1,11 @@
 from django.contrib.auth.models import User, Group
 from rest_framework import viewsets
 from rest_framework import permissions
-from dharam_api.serializer import  GroupSerializer,User_detailsSerializer,feedbackSerializer,InvoiceSerializer
+from dharam_api.serializer import  GroupSerializer,User_detailsSerializer,feedbackSerializer,InvoiceSerializer,HistorySerializer
 from dharam_api.models import User_details 
-from dharam_api.models import Invoice
+from dharam_api.models import Invoice as invo
 from decimal import Decimal
+from dharam_api.models import History
 
 from dharam_api.models import feedback as user_feedback
 import datetime
@@ -46,9 +47,15 @@ class User_detailsViewSet(viewsets.ModelViewSet):
 
 
 class InvoiceViewSet(viewsets.ModelViewSet): 
-    queryset = Invoice.objects.all()
+    queryset = invo.objects.all()
     serializer_class = InvoiceSerializer
     permission_classes = [permissions.IsAuthenticated] 
+
+
+class HistoryViewSet(viewsets.ModelViewSet): 
+    queryset = History.objects.all()
+    serializer_class = HistorySerializer
+    permission_classes = [permissions.IsAuthenticated]     
 
     
 
@@ -250,17 +257,17 @@ class feedback(GenericAPIView):
 class Invoice(GenericAPIView):
    def post(self, request, *args, **kwargs):
         data = json.loads(self.request.body.decode())
-        number = data.get('mobile_number')
-        check_email = data.get('check_email')
-        print(number)
+        data = data.get('date')
+        status = data.get('status')
+        print(data)
         check_email = User_details.objects.filter(email=customer_email).first()
-        if number and check_email:
+        if data and check_email:
             customer_name = check_email.name
             customer_email = check_email.email
-            number = Invoice.objects.count() + 1
-            date = datetime.timezone.now().date()
+            # mobile_number = invo.objects.count() + 1
+            date = datetime.datetime.now().date()
             total_amount = Decimal(data.get('total_amount', 0))
-            invoice = Invoice(number=number, date=date, customer_name=customer_name, customer_email=customer_email, total_amount=total_amount)
+            invoice = invo(mobile_number=status, date=date,customer_name=customer_name, customer_email=customer_email, total_amount=total_amount)
             invoice.save()
             if invoice:
                 response = {'message': "Invoice updated successfully"}
@@ -268,5 +275,37 @@ class Invoice(GenericAPIView):
                 return HttpResponse(json.dumps(response, indent=4), content_type="application/json")
             
         return HttpResponse("Invalid request parameters or user not found", status=400)
+
+
+
+class History(GenericAPIView):
+   def post(self, request, *args, **kwargs):
+        data = json.loads(self.request.body.decode())
+        number = data.get('mobile_number')
+        customer_email = data.get('customer_email')
+        print(number)
+        check_email = User_details.objects.filter(email=customer_email).first()
+        if number and check_email:
+            # Get values from data or initialize them
+            customer_name = data.get('customer_name', '')
+            total_amount = data.get('total_amount', 0)
+            
+            # Remove unnecessary line
+            # data = data.name
+            
+            # Remove unnecessary line
+            # status = status.status
+            
+            date = datetime.datetime.now().date()
+            time = Decimal(data.get('time', 0))
+            invoice = invo(mobile_number=number, date=date, customer_name=customer_name, customer_email=customer_email, total_amount=total_amount)
+            invoice.save()
+            if invoice:
+                response = {'message': "Invoice updated successfully"}
+                print(json.dumps(response, indent=4))
+                return HttpResponse(json.dumps(response, indent=4), content_type="application/json")
+            
+        return HttpResponse("Invalid request parameters or user not found", status=400)
+
 
 
