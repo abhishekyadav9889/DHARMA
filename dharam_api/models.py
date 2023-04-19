@@ -36,6 +36,25 @@ class Invoice(models.Model):
 class History(models.Model):
     date = models.DateField()
     location = models.CharField(max_length=255)
-    status = models.CharField(max_length=255)
+    status = models.CharField(max_length=255) 
     time = models.TimeField()
     accepted = models.BooleanField(default=False)
+
+
+
+
+class Notications(models.Model):
+    accepted = models.CharField(max_length=255)
+    posted = models.CharField(max_length=255)
+    date = models.DateTimeField()    
+
+    # accepted = models.BooleanField(default=False)
+    # posted = models.BooleanField(default=False)
+    # date = models.DateTimeField(auto_now_add=True)
+    # 
+   
+class User_Settings(models.Model):
+    select_Hospital= models.CharField(max_length=255, null=True)  
+    emergency_number = models.CharField(max_length=20,null=True) 
+    whatsapp_number = models.CharField(max_length=20,null=True ) #whatsapp
+    Notications_on=models.BooleanField(null=True)

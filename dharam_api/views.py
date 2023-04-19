@@ -1,17 +1,15 @@
 from django.contrib.auth.models import User, Group
 from rest_framework import viewsets
 from rest_framework import permissions
-from dharam_api.serializer import  GroupSerializer,User_detailsSerializer,feedbackSerializer,InvoiceSerializer,HistorySerializer
+from dharam_api.serializer import  GroupSerializer,User_detailsSerializer,feedbackSerializer,InvoiceSerializer,HistorySerializer,NoticationsSerializer,User_SettingsSerializer
 from dharam_api.models import User_details 
 from dharam_api.models import Invoice as invo
 from decimal import Decimal
-from dharam_api.models import History
-
+from dharam_api.models import History,Notications, User_Settings
 from dharam_api.models import feedback as user_feedback
 import datetime
 from rest_framework import generics, permissions
 from rest_framework.response import Response
-# from dharam_api.models import AuthToken
 from dharam_api.serializer import UserSerializer
 import json
 from django.http import HttpResponse, JsonResponse
@@ -27,7 +25,6 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all().order_by('-date_joined')
     serializer_class = UserSerializer
     permission_classes = [permissions.IsAuthenticated]
-
 
 class GroupViewSet(viewsets.ModelViewSet):
     """
@@ -45,19 +42,25 @@ class User_detailsViewSet(viewsets.ModelViewSet):
     serializer_class = User_detailsSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-
 class InvoiceViewSet(viewsets.ModelViewSet): 
     queryset = invo.objects.all()
     serializer_class = InvoiceSerializer
     permission_classes = [permissions.IsAuthenticated] 
-
 
 class HistoryViewSet(viewsets.ModelViewSet): 
     queryset = History.objects.all()
     serializer_class = HistorySerializer
     permission_classes = [permissions.IsAuthenticated]     
 
-    
+class noticationsViewSet(viewsets.ModelViewSet): 
+    queryset = Notications.objects.all()
+    serializer_class = NoticationsSerializer
+    permission_classes = [permissions.IsAuthenticated] 
+
+class User_SettingsViewSet(viewsets.ModelViewSet): 
+    queryset = User_Settings.objects.all()
+    serializer_class = User_SettingsSerializer
+    permission_classes = [permissions.IsAuthenticated]     
 
 class SignupView(GenericAPIView):
     serializer_class = User_detailsSerializer
@@ -74,8 +77,7 @@ class SignupView(GenericAPIView):
         print(json.dumps(response, indent=4))
 
         return HttpResponse(json.dumps(response, indent=4))
-
-    
+ 
     def get(self, request, *args, **kwargs):
         print(self.request.body)
         user_data_json = json.loads(self.request.body)
@@ -85,8 +87,6 @@ class SignupView(GenericAPIView):
         except:
             return HttpResponse("Invalide username password")
     
-        # for i in user_fetch_data:
-        #     print(i)
         if user_fetch_data:
             print(user_fetch_data.username)
             if user_fetch_data.username == user_data_json["username"] and user_fetch_data.password ==  user_data_json["password"]:
@@ -96,11 +96,9 @@ class SignupView(GenericAPIView):
         else:
             return HttpResponse("Login unsuccefully")
         
-
 class LoginView(GenericAPIView):
     serializer_class = User_detailsSerializer
-    
-    
+
     def get(self, request, *args, **kwargs):
         print(self.request.body)
         user_data_json = json.loads(self.request.body)
@@ -109,9 +107,6 @@ class LoginView(GenericAPIView):
             user_fetch_data = User_details.objects.get(username=user_data_json["username"])
         except:
             return HttpResponse("Invalide username password")
-    
-        # for i in user_fetch_data:
-        #     print(i)
         if user_fetch_data:
             print(user_fetch_data.username)
             if user_fetch_data.username == user_data_json["username"] and user_fetch_data.password ==  user_data_json["password"]:
@@ -155,8 +150,6 @@ class resetpasswordView(GenericAPIView):
                 HttpResponse("Password1 and Password2 is not matched")
         else:
             return HttpResponse("Email Not found")
-
-
 
 class forgotpassword(GenericAPIView):
     def post(self, request, *args, **kwargs):
@@ -221,14 +214,11 @@ class otpverify(GenericAPIView):
              return HttpResponse(json.dumps(response, indent=4))
             else:
                 return HttpResponse("otp number not verify")
-
-
+            
 class feedbackViewSet(viewsets.ModelViewSet): 
     queryset = user_feedback.objects.all()
     serializer_class = feedbackSerializer
     permission_classes = [permissions.IsAuthenticated] 
-
-
 
 class feedback(GenericAPIView):
    def post(self, request, *args, **kwargs):
@@ -243,7 +233,7 @@ class feedback(GenericAPIView):
                  save.save()
                  if save:
                     response = {
-                        'massege': "userfeedback update successfully",
+                        'massege': "userfeedback  successfully",
                         }
                     print(json.dumps(response, indent=4))
                     return HttpResponse((json.dumps(response, indent=4)))
@@ -252,60 +242,111 @@ class feedback(GenericAPIView):
         else:
                 return HttpResponse("user Not found")
 
-
-
 class Invoice(GenericAPIView):
    def post(self, request, *args, **kwargs):
         data = json.loads(self.request.body.decode())
-        data = data.get('date')
-        status = data.get('status')
-        print(data)
-        check_email = User_details.objects.filter(email=customer_email).first()
-        if data and check_email:
-            customer_name = check_email.name
-            customer_email = check_email.email
-            # mobile_number = invo.objects.count() + 1
-            date = datetime.datetime.now().date()
-            total_amount = Decimal(data.get('total_amount', 0))
-            invoice = invo(mobile_number=status, date=date,customer_name=customer_name, customer_email=customer_email, total_amount=total_amount)
-            invoice.save()
-            if invoice:
-                response = {'message': "Invoice updated successfully"}
-                print(json.dumps(response, indent=4))
-                return HttpResponse(json.dumps(response, indent=4), content_type="application/json")
-            
-        return HttpResponse("Invalid request parameters or user not found", status=400)
-
-
-
-class History(GenericAPIView):
-   def post(self, request, *args, **kwargs):
-        data = json.loads(self.request.body.decode())
         number = data.get('mobile_number')
-        customer_email = data.get('customer_email')
+        check_email = data.get('check_email')
         print(number)
         check_email = User_details.objects.filter(email=customer_email).first()
         if number and check_email:
-            # Get values from data or initialize them
-            customer_name = data.get('customer_name', '')
-            total_amount = data.get('total_amount', 0)
-            
-            # Remove unnecessary line
-            # data = data.name
-            
-            # Remove unnecessary line
-            # status = status.status
-            
-            date = datetime.datetime.now().date()
-            time = Decimal(data.get('time', 0))
-            invoice = invo(mobile_number=number, date=date, customer_name=customer_name, customer_email=customer_email, total_amount=total_amount)
+            customer_name = check_email.name
+            customer_email = check_email.email
+            number = Invoice.objects.count() + 1
+            date = datetime.timezone.now().date()
+            total_amount = Decimal(data.get('total_amount', 0))
+            invoice = Invoice(number=number, date=date, customer_name=customer_name, customer_email=customer_email, total_amount=total_amount)
             invoice.save()
             if invoice:
                 response = {'message': "Invoice updated successfully"}
                 print(json.dumps(response, indent=4))
                 return HttpResponse(json.dumps(response, indent=4), content_type="application/json")
             
-        return HttpResponse("Invalid request parameters or user not found", status=400)
+        return HttpResponse("Invalid request parameters or user not found", status)
+class history(GenericAPIView):
+   def post(self, request, *args, **kwargs):
+        date = request.data.get('date')
+        location=request.data.get('location')
+        status = request.data.get('status')
+        time=request.data.get('time')
+        accepted=request.data.get('accepted')
+   
+        if status :
+            date = datetime.datetime.now().date()
+            time = datetime.datetime.now().time()
+            accepted = Decimal(request.data.get('accepted', 0))
+            history = History(date=date, location=location,status=status, time=time, accepted=accepted)
+            history.save()
+            if history:
+                response = {'message': "History  successfully"}
+                print(json.dumps(response, indent=4))
+                return HttpResponse(json.dumps(response, indent=4), content_type="application/json")
+            
+        return HttpResponse("History request parameters or user not found", status=400)
+ 
+class notications(GenericAPIView):
+   def post(self, request, *args, **kwargs):
+        accepted = request.data.get('accepted')
+        posted=request.data.get('posted')
+        date = request.data.get('date')
+           
+        if posted :
+            date = datetime.datetime.now().date()
+            accepted = request.data.get('accepted')
+            notications = Notications(accepted=accepted, posted=posted,date=date)
+            notications.save()
+            if notications:
+                response = {'message': "Notications  successfully"}
+                print(json.dumps(response, indent=4))
+                return HttpResponse(json.dumps(response, indent=4), content_type="application/json")
+            
+        return HttpResponse("Notications request parameters or user not found", status=400)
+
+class whatsapp(GenericAPIView):
+   def post(self, request, *args, **kwargs):
+        whatsapp_number = request.data.get('whatsapp_number')
+        Notications_on=request.data.get('Notications_on')
+        print(whatsapp_number)
+        print(Notications_on)
+        if Notications_on :
+            Notications_on = request.data.get('Notications_on')
+            Settings = User_Settings(whatsapp_number=whatsapp_number,Notications_on=Notications_on)
+            Settings.save()
+            if Settings:
+                response = {'message': "whatsapp  successfully"}
+                print(json.dumps(response, indent=4))
+                return HttpResponse(json.dumps(response, indent=4), content_type="application/json")
+            
+        return HttpResponse("whatsapp request parameters or user not found", status=400)
+
+class Emergency_number(GenericAPIView):
+   def post(self, request, *args, **kwargs):
+        emergency_number = request.data.get('emergency_number')
+        Notications_on=request.data.get('Notications_on')
+        
+        if Notications_on :
+            # date = datetime.datetime.now().date()
+            Notications_on = request.data.get('Notications_on')
+            Settings = User_Settings(emergency_number=emergency_number,Notications_on=Notications_on)
+            Settings.save()
+            if Settings:
+                response = {'message': "Emergency_number  successfully"}
+                print(json.dumps(response, indent=4))
+                return HttpResponse(json.dumps(response, indent=4), content_type="application/json")
+            
+        return HttpResponse("Emergency_number request parameters or user not found", status=400)  
 
 
-
+class select_Hospital(GenericAPIView):
+   def post(self, request, *args, **kwargs):
+        select_Hospital = request.data.get('select_Hospital')
+        
+        if select_Hospital :
+            Settings = User_Settings(select_Hospital=select_Hospital)
+            Settings.save()
+            if Settings:
+                response = {'message': "Hospital_Name  successfully"}
+                print(json.dumps(response, indent=4))
+                return HttpResponse(json.dumps(response, indent=4), content_type="application/json")
+            
+        return HttpResponse("Hospital_Name request parameters or user not found", status=400)         
